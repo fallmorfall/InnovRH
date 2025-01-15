@@ -1,3 +1,4 @@
+# Importation des bibliothéques nécessaires
 import streamlit as st
 import pandas as pd
 import spacy
@@ -8,14 +9,14 @@ from PIL import Image
 import re
 from PyPDF2 import PdfReader
 
-# Load SpaCy model for NLP
+# Chargement du modéle SpaCy pour NLP
 nlp = spacy.load("en_core_web_sm")
 
-# Preprocessing functions
+# Les Fonctions procédurales
 def preprocess_text(text):
     """Clean and preprocess text."""
-    text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
-    text = re.sub(r'[^\w\s]', '', text)  # Remove special characters
+    text = re.sub(r'\s+', ' ', text)  
+    text = re.sub(r'[^\w\s]', '', text) 
     return text.lower().strip()
 
 def extract_text_from_image(image_path):
@@ -49,17 +50,17 @@ def extract_candidate_details(text):
         'contact': None
     }
 
-    # Extract email
+    # Extraction de l'email
     email_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', text)
     if email_match:
         details['email'] = email_match.group()
 
-    # Extract phone number
+    # Extraction numéro de téléphone
     contact_match = re.search(r'\b\d{10}\b|\+\d{1,3}[-.\s]?\d{9,12}', text)
     if contact_match:
         details['contact'] = contact_match.group()
 
-    # Extract name (simple heuristic: assume the first line is the name)
+    # Extract du nom
     lines = text.split("\n")
     for line in lines:
         if re.match(r'^[A-Za-z]+\s[A-Za-z]+$', line.strip()):
@@ -70,13 +71,13 @@ def extract_candidate_details(text):
 
 def match_profiles(job_description, candidate_profiles):
     """Compare job description with candidate profiles."""
-    # Filter out empty profiles
+    # Filtrage des profils vides
     valid_profiles = [profile for profile in candidate_profiles if len(profile['text'].strip()) > 0]
 
     if len(valid_profiles) == 0:
         raise ValueError("All candidate profiles are empty after preprocessing.")
 
-    # TF-IDF Vectorizer with adjusted parameters
+    # TF-IDF Ajustement des paramétres
     vectorizer = TfidfVectorizer(stop_words="english", min_df=1)
     job_vector = vectorizer.fit_transform([job_description])
     profile_texts = [profile['text'] for profile in valid_profiles]
@@ -84,26 +85,26 @@ def match_profiles(job_description, candidate_profiles):
     scores = cosine_similarity(job_vector, profile_vectors)
     return scores[0], valid_profiles
 
-# Streamlit UI
+# Streamlit
 st.title("CV Matcher Application")
 
-# Sidebar navigation
+# Sidebar
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox("Select a page:", ["Home", "Analysis"])
 
 if page == "Home":
     st.header("Home: CV Matching")
     
-    # Upload job description
+    # La job description
     job_description = st.text_area("Enter Job Description:")
     uploaded_cvs = st.file_uploader("Upload CVs (PDF, Images, or Text):", accept_multiple_files=True)
 
     if st.button("Analyze"):
         if job_description and uploaded_cvs:
-            # Preprocess job description
+            # Procedure job description
             job_description_clean = preprocess_text(job_description)
 
-            # Process CVs
+            # Procedure CV
             candidate_profiles = []
             for idx, cv in enumerate(uploaded_cvs):
                 try:
@@ -112,7 +113,7 @@ if page == "Home":
                     elif cv.type == "application/pdf":
                         text = extract_text_from_pdf(cv)
                     else:
-                        text = read_file(cv)  # Use robust file reading function
+                        text = read_file(cv) 
                     text_clean = preprocess_text(text)
                     details = extract_candidate_details(text)
                     candidate_profiles.append({
@@ -125,12 +126,12 @@ if page == "Home":
                 except Exception as e:
                     st.error(f"Error processing file {cv.name}: {e}")
 
-            # Check for empty job description
+            # Vérifier la job description
             if not job_description_clean.strip():
                 st.error("The job description is empty after preprocessing.")
             else:
                 try:
-                    # Match profiles
+                    # Profilage
                     scores, valid_profiles = match_profiles(job_description_clean, candidate_profiles)
                     top_candidates = sorted(
                         enumerate(valid_profiles),
@@ -138,7 +139,7 @@ if page == "Home":
                         reverse=True
                     )[:5]
 
-                    # Display results
+                    # Résultats
                     st.subheader("Top Candidates")
                     for idx, (candidate_idx, profile) in enumerate(top_candidates):
                         details = profile['details']
@@ -147,11 +148,11 @@ if page == "Home":
                         st.write(f"- **Email**: {details['email'] or 'Not Available'}")
                         st.write(f"- **Contact**: {details['contact'] or 'Not Available'}")
                         
-                        # CV preview
+                        # Visualisation CV
                         with st.expander(f"Preview {profile['id']} CV"):
                             st.text_area("CV Preview", profile['raw'], height=300)
 
-                        # File download
+                        # Téléchargement du CV
                         st.download_button(
                             label="Download CV",
                             data=profile['file'].getvalue(),
@@ -168,7 +169,7 @@ if page == "Home":
 elif page == "Analysis":
     st.header("Analysis: Candidate Profiles and Insights")
     
-    # Mock data for analysis
+    # Analyses
     all_skills = ["Python", "Data Analysis", "Machine Learning", "Communication", "Leadership"]
     skills_count = {"Python": 5, "Data Analysis": 3, "Machine Learning": 4, "Communication": 6, "Leadership": 2}
 
@@ -180,7 +181,7 @@ elif page == "Analysis":
     st.write(skill_df.sort_values(by="Count", ascending=False).reset_index(drop=True))
 
     st.subheader("Candidate Comparisons")
-    # Mock comparison data
+    # Comparaison
     candidate_data = pd.DataFrame({
         "Candidate": ["Candidate 1", "Candidate 2", "Candidate 3"],
         "Relevance Score": [95, 89, 87],
